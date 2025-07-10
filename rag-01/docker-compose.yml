@@ -1,0 +1,91 @@
+version: '3'
+services:
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: milvus-etcd
+    command: >
+      etcd
+      --name milvus-etcd
+      --data-dir /etcd
+      --listen-peer-urls http://0.0.0.0:2380
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://milvus-etcd:2379
+      --initial-advertise-peer-urls http://milvus-etcd:2380
+      --initial-cluster milvus-etcd=http://milvus-etcd:2380
+      --initial-cluster-state new
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+      - ETCD_HEARTBEAT_INTERVAL=500
+      - ETCD_ELECTION_TIMEOUT=2500
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd_data:/etcd
+
+  minio:
+    image: minio/minio:RELEASE.2023-07-21T21-12-44Z
+    container_name: milvus-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  milvus-standalone:
+    build:
+      context: ./milvus-custom
+    container_name: milvus-standalone
+    command: ["/wait-for-it.sh", "milvus-etcd:2379", "--", "/wait-for-it.sh", "milvus-minio:9000", "--", "milvus", "run", "standalone"]
+    environment:
+      - ETCD_ENDPOINTS=milvus-etcd:2379
+      - MINIO_ADDRESS=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - DATA_PATH=/var/lib/milvus
+      - TZ=America/Sao_Paulo
+      - MILVUS_USERNAME=admin
+      - MILVUS_PASSWORD=local@123
+      - MILVUS_ENABLE_RBAC=true
+    depends_on:
+      - etcd
+      - minio
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+
+  milvus-insight:
+    image: milvusdb/milvus-insight:latest
+    container_name: milvus-insight
+    ports:
+      - "7000:3000"
+    environment:
+      - HOST_URL=http://localhost:7000
+      - MILVUS_URL=http://milvus-standalone:19530
+      - MILVUS_USERNAME=admin
+      - MILVUS_PASSWORD=local@123
+    depends_on:
+      - milvus-standalone
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+    volumes:
+      - ~/.n8n:/home/node/.n8n
+
+volumes:
+  etcd_data:
+  minio_data:
+  milvus_data:
