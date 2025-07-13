@@ -1,0 +1,731 @@
+{
+  "name": "whats + analise sentimento",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7e72b8f6-3126-4a68-8744-586b0ca37e8d",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        3380,
+        460
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "Z742eYjvaRgSCRon",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 📚 Fluxo do Upload de Arquivo",
+        "height": 500,
+        "width": 700,
+        "color": 7
+      },
+      "id": "37be33ef-c64c-41e8-b72d-7ea452fd26f4",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3340,
+        700
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields').item.json.message }}",
+        "options": {
+          "systemMessage": "Você é o SigmaGPT, um agente especialista em Lean Six Sigma Black Belt, com foco em ajudar estudantes a se prepararem para a certificação.\n\nSua principal fonte de informação é uma base de conhecimento estruturada na RAG (chamada “Base-Conhecimento”) que contém materiais oficiais, **não busque informações da internet**.\n\nSeja sempre cordial, didático e estruturado nas respostas. Sempre que possível, forneça **exemplos práticos** para ilustrar os conceitos, principalmente quando forem ferramentas como SIPOC, DMAIC, Diagrama de Causa e Efeito, ou análises estatísticas como ANOVA e regressão.\n\nQuando o usuário fizer uma pergunta:\n- Consulte a Base-Conhecimento via RAG.\n- Se não houver conteúdo direto, dê uma resposta honesta e sugira tópicos relacionados.\n- Ajude o usuário a entender **o que é**, **por que é usado** e **como aplicar** na prática.\n\nSeu tom deve ser amigável e confiável — como um mentor que acompanha o aluno durante toda a jornada do Black Belt.\n\nNunca invente conteúdo fora da base. Diga sempre que sua fonte é a Base-Conhecimento.\n\nExemplo de resposta:\n> \"O ciclo DMAIC é a base do Six Sigma e significa Definir, Medir, Analisar, Melhorar e Controlar. Por exemplo, na fase 'Definir', você pode usar um SIPOC para mapear o processo antes de iniciar a medição. Quer que eu te mostre um exemplo de SIPOC para um processo de atendimento ao cliente?\"\n\nEsteja sempre disponível para reforçar conceitos, sugerir técnicas e revisar conteúdos de forma leve e eficaz."
+        }
+      },
+      "id": "d50857f3-4ca1-45ef-8c4c-36c301046156",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        3400,
+        60
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "0f08f325-592b-40bf-ac3f-64a5e4ac01be",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2960,
+        280
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "Z742eYjvaRgSCRon",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 🐕 Fluxo de resposta",
+        "height": 980,
+        "width": 2800,
+        "color": 7
+      },
+      "id": "cb07569e-ec86-4d4b-a666-2b30e62ed9f9",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1240,
+        -300
+      ],
+      "typeVersion": 1,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "milvusCollection": {
+          "__rl": true,
+          "value": "rag_arquivos",
+          "mode": "id"
+        },
+        "options": {
+          "clearCollection": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMilvus",
+      "typeVersion": 1.3,
+      "position": [
+        3640,
+        840
+      ],
+      "id": "19e2cd13-1374-4cf0-999b-7f22d99ce319",
+      "name": "Milvus Vector Store",
+      "credentials": {
+        "milvusApi": {
+          "id": "2UtyH5REHDuf7Ggk",
+          "name": "Milvus account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "id": "0160a6f1-233e-4f4a-bf55-8db1fe21b054",
+      "name": "Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        3800,
+        1000
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 60,
+        "options": {}
+      },
+      "id": "380ea0f8-c18f-498b-bfb6-6102348c006a",
+      "name": "Chunks",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "position": [
+        3940,
+        1120
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "formTitle": "Carregue seus dados para testar o RAG",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your file(s)",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "8599a204-a7df-48a0-bcd8-d817857e8212",
+      "name": "Upload do arquivo",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        3440,
+        840
+      ],
+      "webhookId": "82848bc4-5ea2-4e5a-8bb6-3c09b94a8c5d",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Buscar trechos relevantes de documentos carregados na coleção rag_arquivos para responder perguntas de usuários sobre o conteúdo.",
+        "milvusCollection": {
+          "__rl": true,
+          "value": "rag_arquivos",
+          "mode": "id"
+        },
+        "includeDocumentMetadata": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMilvus",
+      "typeVersion": 1.3,
+      "position": [
+        3540,
+        260
+      ],
+      "id": "e0725139-6414-4541-9c36-1669c7200f99",
+      "name": "Base-Conhecimento",
+      "credentials": {
+        "milvusApi": {
+          "id": "2UtyH5REHDuf7Ggk",
+          "name": "Milvus account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7edb24b4-14f5-41ec-9ed9-71f879be5095",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        60
+      ],
+      "id": "671f22c4-884b-410f-aaab-e6d4db292c82",
+      "name": "Webhook",
+      "webhookId": "7edb24b4-14f5-41ec-9ed9-71f879be5095"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "188d22a9-6a79-4f62-9ba2-41348b20950d",
+              "name": "jid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "036618ad-cd86-4e17-b036-34d93c018fcd",
+              "name": "id_mensagem",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2b530a68-2cdc-4fc2-a348-ea214889ebd8",
+              "name": "instancia",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "a8f28eea-589e-4182-9935-ec33675d9ab3",
+              "name": "nome",
+              "value": "={{ $json.body.data.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "3340850e-d9c3-4692-bbab-922c6b72843c",
+              "name": "message",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "04bfeea6-bd4f-4b0f-979e-3d199e86ec0e",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1480,
+        60
+      ],
+      "id": "3847529d-57bf-4ed5-9aca-e032bf18402b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc777249-8138-4416-ba08-1635e2482e01",
+              "leftValue": "={{ $json.jid }}",
+              "rightValue": "telefone@s.whatsapp.net",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "62477c79-3663-429b-8cfd-cce5d5dbf003",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "messages.upsert",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1660,
+        60
+      ],
+      "id": "4b0d7d9e-54d7-4487-a133-bedcc4d0936e",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Edit Fields').item.json.instancia }}",
+        "remoteJid": "={{ $('Edit Fields').item.json.jid }}",
+        "messageText": "={{ $('AI Agent').item.json.output }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        3820,
+        60
+      ],
+      "id": "82e4bbbb-b2bd-41d8-b4bf-9903d20c2fbd",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "3i7HNwaQEFyBawLG",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $json.jid }}",
+        "options": {}
+      },
+      "id": "0cd4dbdf-5e1d-4750-8974-0b830c17b321",
+      "name": "Busca Memória da Conversa",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        60
+      ],
+      "credentials": {
+        "redis": {
+          "id": "3TTC2ONRl9saIuHx",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json.propertyName\nlet array = Array.isArray(data) ? data : JSON.parse(data);\n\n// Junta os elementos do array com um espaço entre eles\nconst mensagem_completa = array.join(\" \");\n\n// Retorna o resultado com o nome da variável \"mensagem_completa\"\nreturn [{ json: { mensagem_completa } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2780,
+        60
+      ],
+      "id": "283c2d06-ca5c-4519-81ab-6d9fe5048ef4",
+      "name": "Formata"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.mensagem_completa }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.sentimentAnalysis",
+      "typeVersion": 1.1,
+      "position": [
+        2960,
+        60
+      ],
+      "id": "bbf4c16f-8f7f-4778-a26d-0b22410d8c5d",
+      "name": "Sentiment Analysis"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.jid }}",
+        "messageData": "={{ $json.message }}",
+        "tail": true
+      },
+      "id": "74e347b7-1d54-4e90-959a-836dbe7e94b6",
+      "name": "Incluir Mensagem",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        60
+      ],
+      "credentials": {
+        "redis": {
+          "id": "3TTC2ONRl9saIuHx",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        -140
+      ],
+      "id": "54d69bb6-a05b-40e3-94f2-dc5e37a92710",
+      "name": "Wait",
+      "webhookId": "febdbbde-3d14-4e33-812b-8c9fc1c50be3"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Edit Fields').item.json.jid }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2600,
+        60
+      ],
+      "id": "591134a4-e66a-40d0-b299-d5067678c1a6",
+      "name": "Limpa do Redis",
+      "credentials": {
+        "redis": {
+          "id": "3TTC2ONRl9saIuHx",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db03f18b-f375-471f-8187-abc3a5a540e3",
+              "leftValue": "={{ $json.propertyName }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2360,
+        60
+      ],
+      "id": "3fbb885a-d4eb-4fa8-a2a8-48880404d040",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'context' + $('Edit Fields').item.json.jid }}",
+        "sessionTTL": 28800
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        3380,
+        260
+      ],
+      "id": "1ecedda1-7766-4e5f-9a57-72006be2b8f6",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "3TTC2ONRl9saIuHx",
+          "name": "Redis account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Base-Conhecimento",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Milvus Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Sentiment Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Milvus Vector Store": {
+      "main": [
+        []
+      ]
+    },
+    "Chunks": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload do arquivo": {
+      "main": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base-Conhecimento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Memória da Conversa": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Busca Memória da Conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa do Redis": {
+      "main": [
+        [
+          {
+            "node": "Formata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Limpa do Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a1fda15a-97a4-4928-ae9d-9a8ca97eb200",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d00ef91ad4a70f92157a5f4e2301e4903a5975d52bbf8b42c1609698ae4968ae"
+  },
+  "id": "oTzpcrqMceFh61Yf",
+  "tags": []
+}
