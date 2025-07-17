@@ -72,6 +72,14 @@ services:
       - MILVUS_URL=http://milvus-standalone:19530
       - MILVUS_USERNAME=admin
       - MILVUS_PASSWORD=local@123
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M  
     depends_on:
       - milvus-standalone
 

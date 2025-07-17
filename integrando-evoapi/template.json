@@ -295,7 +295,7 @@
             {
               "id": "cc777249-8138-4416-ba08-1635e2482e01",
               "leftValue": "={{ $json.jid }}",
-              "rightValue": "5511965848683@s.whatsapp.net",
+              "rightValue": "numerotelefone@s.whatsapp.net",
               "operator": {
                 "type": "string",
                 "operation": "equals",
