@@ -1,0 +1,954 @@
+{
+  "name": "Boas Praticas (mensagens duplicas e mensagens Longas)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "de75bb97-cbed-476a-a048-3905f66c0d4d",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        980,
+        240
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 📚 Fluxo do Upload de Arquivo",
+        "height": 500,
+        "width": 700,
+        "color": 7
+      },
+      "id": "6010c6c9-d7b0-43d0-b4e9-a6fed3b7ced5",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        700,
+        -120
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.mensagem_completa }}",
+        "options": {
+          "systemMessage": "Você é o SigmaGPT, um agente especialista em Lean Six Sigma Black Belt, com foco em ajudar estudantes a se prepararem para a certificação.\n\nSua principal fonte de informação é uma base de conhecimento estruturada na RAG (chamada “Base-Conhecimento”) que contém materiais oficiais, **não busque informações da internet**.\n\nSeja sempre cordial, didático e estruturado nas respostas. Sempre que possível, forneça **exemplos práticos** para ilustrar os conceitos, principalmente quando forem ferramentas como SIPOC, DMAIC, Diagrama de Causa e Efeito, ou análises estatísticas como ANOVA e regressão.\n\nQuando o usuário fizer uma pergunta:\n- Consulte a Base-Conhecimento via RAG.\n- Se não houver conteúdo direto, dê uma resposta honesta e sugira tópicos relacionados.\n- Ajude o usuário a entender **o que é**, **por que é usado** e **como aplicar** na prática.\n\nSeu tom deve ser amigável e confiável — como um mentor que acompanha o aluno durante toda a jornada do Black Belt.\n\nNunca invente conteúdo fora da base. Diga sempre que sua fonte é a Base-Conhecimento.\n\nExemplo de resposta:\n> \"O ciclo DMAIC é a base do Six Sigma e significa Definir, Medir, Analisar, Melhorar e Controlar. Por exemplo, na fase 'Definir', você pode usar um SIPOC para mapear o processo antes de iniciar a medição. Quer que eu te mostre um exemplo de SIPOC para um processo de atendimento ao cliente?\"\n\nEsteja sempre disponível para reforçar conceitos, sugerir técnicas e revisar conteúdos de forma leve e eficaz."
+        }
+      },
+      "id": "eed94fa9-9cd6-47f2-a08e-8df02e3b848c",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2400,
+        540
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "id": "a1b1005d-5d2e-4643-b4d6-a79353b79d5a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        2320,
+        700
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "### 🐕 Fluxo de resposta",
+        "height": 600,
+        "width": 3260,
+        "color": 7
+      },
+      "id": "b910e6f1-ad77-46da-8a87-3b5e58515e86",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        700,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "milvusCollection": {
+          "__rl": true,
+          "value": "rag_arquivos",
+          "mode": "id"
+        },
+        "options": {
+          "clearCollection": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMilvus",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        -60
+      ],
+      "id": "d44afc16-2d8a-4161-bf57-c89202749e1c",
+      "name": "Milvus Vector Store",
+      "credentials": {
+        "milvusApi": {
+          "id": "QotyvoaRgX2BwszE",
+          "name": "Milvus account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "id": "09707d4d-831f-45e1-8ec0-d8c43e8861d8",
+      "name": "Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        1120,
+        100
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 60,
+        "options": {}
+      },
+      "id": "997a4a0e-d54c-4db4-a51b-7cdcb1d2082b",
+      "name": "Chunks",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "position": [
+        1260,
+        220
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "formTitle": "Carregue seus dados para testar o RAG",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload your file(s)",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf, .csv",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cb890785-7d73-4b64-821a-5190d8b6ee46",
+      "name": "Upload do arquivo",
+      "type": "n8n-nodes-base.formTrigger",
+      "position": [
+        760,
+        -60
+      ],
+      "webhookId": "82848bc4-5ea2-4e5a-8bb6-3c09b94a8c5d",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Buscar trechos relevantes de documentos carregados na coleção rag_arquivos para responder perguntas de usuários sobre o conteúdo.",
+        "milvusCollection": {
+          "__rl": true,
+          "value": "rag_arquivos",
+          "mode": "id"
+        },
+        "includeDocumentMetadata": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMilvus",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        740
+      ],
+      "id": "b584195d-0542-4b30-b204-b504fb48c9fe",
+      "name": "Base-Conhecimento",
+      "credentials": {
+        "milvusApi": {
+          "id": "QotyvoaRgX2BwszE",
+          "name": "Milvus account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "7edb24b4-14f5-41ec-9ed9-71f879be5095",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        740,
+        560
+      ],
+      "id": "b7e62f52-3d56-4e2a-b6f4-dba691ef8ddf",
+      "name": "Webhook",
+      "webhookId": "7edb24b4-14f5-41ec-9ed9-71f879be5095"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc777249-8138-4416-ba08-1635e2482e01",
+              "leftValue": "={{ $json.jid }}",
+              "rightValue": "celular@s.whatsapp.net",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "62477c79-3663-429b-8cfd-cce5d5dbf003",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "messages.upsert",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        1060,
+        560
+      ],
+      "id": "5bd35914-7701-412f-a9bb-c341df1a5a34",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Formata Variaveis').item.json.instancia }}",
+        "remoteJid": "={{ $('Formata Variaveis').item.json.jid }}",
+        "messageText": "={{ $json['output.mensagens'] }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        3480,
+        540
+      ],
+      "id": "76cad5d5-e188-4f05-9e71-ec5fbaf645b3",
+      "name": "Enviar texto",
+      "credentials": {
+        "evolutionApi": {
+          "id": "nbI8KVlT6kVOgAmX",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.jid }}_buffer",
+        "messageData": "={{ $json.message }}",
+        "tail": true
+      },
+      "id": "0a0aefa8-eff6-4212-86e5-0a88c344d26d",
+      "name": "Incluir Mensagem",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        560
+      ],
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $('Formata Variaveis').item.json.jid }}_buffer",
+        "options": {}
+      },
+      "id": "f2f654b3-44e9-43ef-86f1-615332ccc3b1",
+      "name": "Busca Memória da Conversa",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        560
+      ],
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "d3d70f58-7913-4dcf-af6f-44d6bf311593",
+      "name": "No Operation, do nothing1",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Formata Variaveis').item.json.jid }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        540
+      ],
+      "id": "0352f246-8c34-4923-96e1-a25ea4e71fcd",
+      "name": "Limpa do Redis",
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Busca Memória da Conversa').first().json.propertyName\nlet array = Array.isArray(data) ? data : JSON.parse(data);\n\n// Junta os elementos do array com um espaço entre eles\nconst mensagem_completa = array.join(\" \");\n\n// Retorna o resultado com o nome da variável \"mensagem_completa\"\nreturn [{ json: { mensagem_completa: mensagem_completa, sessionId: $('Formata Variaveis').first().json.jid } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        540
+      ],
+      "id": "bdf8b3ea-ea5a-4b9b-8e90-80719317772d",
+      "name": "Formata"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d9d05a6d-d8e3-45dc-b61d-b5e07a950312",
+      "name": "Embeddings OpenAI1",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "position": [
+        2680,
+        860
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "188d22a9-6a79-4f62-9ba2-41348b20950d",
+              "name": "jid",
+              "value": "={{ $json.body.data.key.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "036618ad-cd86-4e17-b036-34d93c018fcd",
+              "name": "id_mensagem",
+              "value": "={{ $json.body.data.key.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2b530a68-2cdc-4fc2-a348-ea214889ebd8",
+              "name": "instancia",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "a8f28eea-589e-4182-9935-ec33675d9ab3",
+              "name": "nome",
+              "value": "={{ $json.body.data.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "3340850e-d9c3-4692-bbab-922c6b72843c",
+              "name": "message",
+              "value": "={{ $json.body.data.message.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "04bfeea6-bd4f-4b0f-979e-3d199e86ec0e",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        560
+      ],
+      "id": "4173ca64-b771-43d0-9d0c-214ad1188c8f",
+      "name": "Formata Variaveis"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        2400,
+        820
+      ],
+      "id": "839f3d19-e14a-4024-8367-fafa4d74f508",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1420,
+        560
+      ],
+      "id": "ae9c703d-e34e-44de-a0cc-fa035dd149bc",
+      "name": "Consolida Mensagem",
+      "webhookId": "dfa7c221-0b47-4dc2-9e7f-a1d4bb642014"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db03f18b-f375-471f-8187-abc3a5a540e3",
+              "leftValue": "={{ $('Busca Memória da Conversa').item.json.propertyName }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        560
+      ],
+      "id": "f3918d22-83eb-4c9a-b463-b9372101396c",
+      "name": "Valida se existe mensagem"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<mensagem_do_usuario>\n{{ $('AI Agent').first().json.output }}\n</mensagem_do_usuario>",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Apenas estruture a <mensagem_do_usuario> no formato JSON solicitado no output parser e seguindo as instruções de formatação abaixo. Não altere nada mais na mensagem\n\n# Formatação\n- Divida as mensagens para que fiquem naturais e humanizadas;\n- Divida as mensagens conforme estrutura do output parser para que não fiquem muito longas (maiores que 200 caractéres);\n- Não separe mensagens vazias;\n- Use quebras de linhas (\\n\\n) após pontos finais;\n- Para negrito (bold) use apenas um '' nunca duas '' (exemplo: *negrito).\n\nExemplo de formato JSON:\n{\n\"mensagens\": [\"Mensagem 0\", \"Mensagem 1\", \"Mensagem 2\"]\n}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        2760,
+        540
+      ],
+      "id": "91fef0c8-26ee-47a6-b35b-a270f6b79b16",
+      "name": "Estrutura da Mensagem de Retorno"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2900,
+        860
+      ],
+      "id": "a89a3767-35f5-4cb5-baeb-449115c39387",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        2980,
+        740
+      ],
+      "id": "6eb69990-f26a-4409-9f65-898760d9154d",
+      "name": "Ajusta o Parse do JSON"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"mensagens\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    }\n  },\n  \"required\": [\"mensagens\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        3180,
+        860
+      ],
+      "id": "df0ad188-2f48-47b2-9def-84d4e622e432",
+      "name": "Seta o Tipo de Retorno JSON"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        3260,
+        520
+      ],
+      "id": "5fecf9de-5f3e-4951-90f9-94898209192d",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3660,
+        540
+      ],
+      "id": "eddfa6c9-6262-460f-9eee-ef88b21719c6",
+      "name": "Espera 2 segundos",
+      "webhookId": "bd52fb7e-81a2-4828-bd5c-3774f66d762e"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3500,
+        400
+      ],
+      "id": "ef29ec63-cd0b-410c-be6b-717a53f64227",
+      "name": "Não faz nada1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.mensagens",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        3060,
+        540
+      ],
+      "id": "e07a1a20-62d7-4ec5-a941-633b3e91ad32",
+      "name": "Quebra Mensagens em várias Linhas"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chunks": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload do arquivo": {
+      "main": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base-Conhecimento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Formata Variaveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Consolida Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Memória da Conversa": {
+      "main": [
+        [
+          {
+            "node": "Valida se existe mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa do Redis": {
+      "main": [
+        [
+          {
+            "node": "Formata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Base-Conhecimento",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Variaveis": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolida Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Busca Memória da Conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida se existe mensagem": {
+      "main": [
+        [
+          {
+            "node": "Limpa do Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Ajusta o Parse do JSON",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ajusta o Parse do JSON": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seta o Tipo de Retorno JSON": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Ajusta o Parse do JSON",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estrutura da Mensagem de Retorno": {
+      "main": [
+        [
+          {
+            "node": "Quebra Mensagens em várias Linhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Não faz nada1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera 2 segundos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quebra Mensagens em várias Linhas": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar texto": {
+      "main": [
+        [
+          {
+            "node": "Espera 2 segundos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "71867595-3842-4e36-874f-fac78e9206a1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0043122d26d439c5173e475108c5923269d6c3dff60b76cd61d6454df1a57c8b"
+  },
+  "id": "2HVVse13l2Ot5zlB",
+  "tags": []
+}
