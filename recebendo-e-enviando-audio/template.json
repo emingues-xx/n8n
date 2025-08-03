@@ -1,5 +1,5 @@
 {
-  "name": "Boas Praticas (mensagens duplicas e mensagens Longas)",
+  "name": "Recebendo e enviando Audios",
   "nodes": [
     {
       "parameters": {
@@ -81,14 +81,14 @@
       "parameters": {
         "content": "### 🐕 Fluxo de resposta",
         "height": 600,
-        "width": 3260,
+        "width": 4400,
         "color": 7
       },
       "id": "b910e6f1-ad77-46da-8a87-3b5e58515e86",
       "name": "Sticky Note2",
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        700,
+        200,
         400
       ],
       "typeVersion": 1
@@ -208,7 +208,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        740,
+        220,
         560
       ],
       "id": "b7e62f52-3d56-4e2a-b6f4-dba691ef8ddf",
@@ -253,7 +253,7 @@
       "type": "n8n-nodes-base.filter",
       "typeVersion": 2.2,
       "position": [
-        1060,
+        540,
         560
       ],
       "id": "5bd35914-7701-412f-a9bb-c341df1a5a34",
@@ -270,7 +270,7 @@
       "type": "n8n-nodes-evolution-api.evolutionApi",
       "typeVersion": 1,
       "position": [
-        3460,
+        4200,
         540
       ],
       "id": "76cad5d5-e188-4f05-9e71-ec5fbaf645b3",
@@ -295,7 +295,7 @@
       "typeVersion": 1,
       "position": [
         1240,
-        560
+        420
       ],
       "credentials": {
         "redis": {
@@ -427,6 +427,18 @@
               "name": "event",
               "value": "={{ $json.body.event }}",
               "type": "string"
+            },
+            {
+              "id": "15ad0bd9-fb25-40c3-b2a3-5331624bd5ec",
+              "name": "messageType",
+              "value": "={{ $json.body.data.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "f8509987-a860-4dae-8a03-a101d1c9387c",
+              "name": "audioMessage",
+              "value": "={{ $json.body.data.message.base64 }}",
+              "type": "string"
             }
           ]
         },
@@ -435,7 +447,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        900,
+        380,
         560
       ],
       "id": "4173ca64-b771-43d0-9d0c-214ad1188c8f",
@@ -522,8 +534,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.6,
       "position": [
-        2760,
-        540
+        3500,
+        420
       ],
       "id": "91fef0c8-26ee-47a6-b35b-a270f6b79b16",
       "name": "Estrutura da Mensagem de Retorno"
@@ -540,8 +552,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        2840,
-        820
+        3600,
+        580
       ],
       "id": "a89a3767-35f5-4cb5-baeb-449115c39387",
       "name": "OpenAI Chat Model1",
@@ -560,24 +572,11 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.2,
       "position": [
-        3020,
-        740
+        3720,
+        580
       ],
       "id": "df0ad188-2f48-47b2-9def-84d4e622e432",
       "name": "Seta o Tipo de Retorno JSON"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        3260,
-        520
-      ],
-      "id": "5fecf9de-5f3e-4951-90f9-94898209192d",
-      "name": "Loop Over Items"
     },
     {
       "parameters": {
@@ -586,8 +585,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        3660,
-        540
+        4400,
+        560
       ],
       "id": "eddfa6c9-6262-460f-9eee-ef88b21719c6",
       "name": "Espera 2 segundos",
@@ -598,8 +597,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        3500,
-        400
+        4400,
+        420
       ],
       "id": "ef29ec63-cd0b-410c-be6b-717a53f64227",
       "name": "Não faz nada1"
@@ -612,11 +611,493 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        3060,
-        540
+        3820,
+        420
       ],
       "id": "e07a1a20-62d7-4ec5-a941-633b3e91ad32",
       "name": "Quebra Mensagens em várias Linhas"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4020,
+        440
+      ],
+      "id": "14680c5f-cc9f-439d-b972-d07aa63835ab",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "101c3ff7-e997-43bb-8e99-fe82746c5993",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "38226af4-80fe-4155-9ceb-2379f44e29ed",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "extendedTextMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "extendedTextMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "300366d9-2416-4cf4-93c3-e48c8761c60f",
+                    "leftValue": "={{ $json.messageType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audioMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "66a2bcc3-7185-45d8-9ad0-1444298e1b39",
+                    "leftValue": "{{ $json.messageType }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imageMessage"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "34559043-54ef-4dec-b177-2bc8a0eb552c",
+      "name": "Switch1",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        700,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audioMessage",
+        "options": {
+          "mimeType": "=audio/mpeg"
+        }
+      },
+      "id": "1110645e-b9cb-478a-9bea-d487801aa91f",
+      "name": "Converter Áudio",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "image",
+          "mimeType": ""
+        }
+      },
+      "id": "30ecb5b0-fb18-49a3-8468-0c848472da9f",
+      "name": "Converter Imagem",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "afa4be30-3efd-4cda-90a7-f834cca7c6e8",
+      "name": "OpenAI - Transcreve Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        1060,
+        620
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "text": "Analise essa imagem, oque tem nela?",
+        "inputType": "base64",
+        "options": {}
+      },
+      "id": "1b9f82ad-498c-451f-bd33-04e60822f3bc",
+      "name": "OpenAI - Analisa Imagem",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        1060,
+        800
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('Formata Variaveis').item.json.jid }}_buffer",
+        "messageData": "={{ $json.text }}",
+        "tail": true
+      },
+      "id": "dc79b3a3-d188-466d-997d-ded6126a1ba7",
+      "name": "Incluir Audio",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        620
+      ],
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('Formata Variaveis').item.json.jid }}_buffer",
+        "messageData": "={{ $json.text }}",
+        "tail": true
+      },
+      "id": "ed510ee3-167b-4f0c-89f3-6e9f964582a8",
+      "name": "Incluir Imagem",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        800
+      ],
+      "credentials": {
+        "redis": {
+          "id": "wXFs0ZlKvie891MM",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "101c3ff7-e997-43bb-8e99-fe82746c5993",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "38226af4-80fe-4155-9ceb-2379f44e29ed",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "extendedTextMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "extendedTextMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "300366d9-2416-4cf4-93c3-e48c8761c60f",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audioMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "66a2bcc3-7185-45d8-9ad0-1444298e1b39",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imageMessage"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "7e0be9fb-566e-47e5-9f22-229874d45917",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        2800,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Resuma o texto a seguir para uma resposta em audio do whatsapp \"{{ $json.output }}\"\n\nSempre me retorne o texto resumido diretamente conforme formato abaixo\n\nWhatsApp:texto resumido"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "04c8330a-a88b-4638-ae83-0ac2478d09f0",
+      "name": "OpenAI - Resume Mensagem",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        3060,
+        760
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "775yeOSZFoS9SsYY",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtém o primeiro item do fluxo\nconst textoEntrada = $input.first().json.message.content;\n\n// Remove quebras de linha (\\n)\nlet textoProcessado = textoEntrada.replace(/\\n/g, \"\").replace(\"WhatsApp:\", \"\").trim();\n\n// Remove emojis\ntextoProcessado = textoProcessado.replace(\n  /[\\u{1F600}-\\u{1F64F}]|[\\u{1F300}-\\u{1F5FF}]|[\\u{1F680}-\\u{1F6FF}]|[\\u{1F700}-\\u{1F77F}]|[\\u{1F780}-\\u{1F7FF}]|[\\u{1F800}-\\u{1F8FF}]|[\\u{1F900}-\\u{1F9FF}]|[\\u{1FA00}-\\u{1FA6F}]|[\\u{1FA70}-\\u{1FAFF}]|[\\u{2600}-\\u{26FF}]|[\\u{2700}-\\u{27BF}]|[\\u{FE00}-\\u{FE0F}]|[\\u{1F1E0}-\\u{1F1FF}]/gu,\n  \"\"\n);\n\n// Remove caracteres especiais, mantendo apenas letras, números e espaços\ntextoProcessado = textoProcessado.replace(/[^a-zA-Z0-9À-ÿ\\s]/g, \"\");\n\n// Retorna o resultado\nreturn {\n  textoOriginal: textoEntrada,\n  textoSemQuebrasNemEmojisNemEspeciais: textoProcessado,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        760
+      ],
+      "id": "02348015-d644-4413-8cd6-94e33e2f5e06",
+      "name": "Formata Mensagem para Áudio"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.elevenlabs.io/v1/text-to-speech/67bXhg8qkacZvis5eN99",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "xi-api-key",
+              "value": "=SUA-CHAVE-ELEVENLABS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n   \"text\":\"{{ $json.textoSemQuebrasNemEmojisNemEspeciais }}\",\n   \"model_id\":\"eleven_multilingual_v2\",\n   \"voice_settings\":{\n      \"stability\":0.5,\n      \"similarity_boost\":0.8,\n      \"style\":0.0,\n      \"use_speaker_boost\":true\n   }\n} ",
+        "options": {}
+      },
+      "id": "9a8fff94-dcbf-494e-b4e0-b5dde2cf31e8",
+      "name": "Tratamento de Voz",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        3580,
+        760
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "id": "a240c7af-b280-4fd4-b44e-e3591669af0e",
+      "name": "Audio-Base64-Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3760,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "operation": "send-audio",
+        "instanceName": "={{ $('Formata Variaveis').item.json.instancia }}",
+        "remoteJid": "={{ $('Formata Variaveis').item.json.jid }}",
+        "media": "={{ $json.data }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        4000,
+        820
+      ],
+      "id": "76c4a28a-d518-4352-9610-d5cd78ba3027",
+      "name": "Envia Mensagem por Audio",
+      "credentials": {
+        "evolutionApi": {
+          "id": "nbI8KVlT6kVOgAmX",
+          "name": "Evolution account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -702,7 +1183,7 @@
       "main": [
         [
           {
-            "node": "Incluir Mensagem",
+            "node": "Switch1",
             "type": "main",
             "index": 0
           }
@@ -713,7 +1194,7 @@
       "main": [
         [
           {
-            "node": "Estrutura da Mensagem de Retorno",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -859,7 +1340,40 @@
         ]
       ]
     },
-    "Loop Over Items": {
+    "Espera 2 segundos": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quebra Mensagens em várias Linhas": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar texto": {
+      "main": [
+        [
+          {
+            "node": "Espera 2 segundos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
       "main": [
         [
           {
@@ -877,33 +1391,174 @@
         ]
       ]
     },
-    "Espera 2 segundos": {
+    "Switch1": {
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Converter Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Converter Imagem",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Quebra Mensagens em várias Linhas": {
+    "Converter Áudio": {
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "OpenAI - Transcreve Audio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Enviar texto": {
+    "Converter Imagem": {
       "main": [
         [
           {
-            "node": "Espera 2 segundos",
+            "node": "OpenAI - Analisa Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Audio": {
+      "main": [
+        [
+          {
+            "node": "Consolida Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Transcreve Audio": {
+      "main": [
+        [
+          {
+            "node": "Incluir Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Analisa Imagem": {
+      "main": [
+        [
+          {
+            "node": "Incluir Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Imagem": {
+      "main": [
+        [
+          {
+            "node": "Consolida Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OpenAI - Resume Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Resume Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Formata Mensagem para Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Mensagem para Áudio": {
+      "main": [
+        [
+          {
+            "node": "Tratamento de Voz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tratamento de Voz": {
+      "main": [
+        [
+          {
+            "node": "Audio-Base64-Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio-Base64-Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Envia Mensagem por Audio",
             "type": "main",
             "index": 0
           }
@@ -915,7 +1570,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "03a397a6-1d44-4de5-ba29-643fd80bd593",
+  "versionId": "4175a8c1-e955-4968-8d6b-4f61652c897f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "0043122d26d439c5173e475108c5923269d6c3dff60b76cd61d6454df1a57c8b"
