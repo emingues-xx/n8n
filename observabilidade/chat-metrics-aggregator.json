@@ -1,0 +1,639 @@
+{
+  "name": "chat-metrics-aggregator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        368
+      ],
+      "id": "schedule-trigger"
+    },
+    {
+      "parameters": {
+        "operation": "pop",
+        "list": "metrics:queue:traces",
+        "options": {}
+      },
+      "name": "Pop Traces Queue",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        416,
+        160
+      ],
+      "id": "pop-traces",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pop",
+        "list": "metrics:queue:generations",
+        "options": {}
+      },
+      "name": "Pop Generations Queue",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        416,
+        384
+      ],
+      "id": "pop-generations",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse JSON de cada trace\nconst inputItems = $input.all();\nconst items = [];\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  try {\n    // Redis retorna em propertyName\n    const rawData = item.json.propertyName || item.json.value || item.json;\n    const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;\n    \n    if (data._langfuse) {\n      items.push({ \n        json: data._langfuse,\n        pairedItem: { item: i }\n      });\n    }\n  } catch (e) {\n    console.log('Error parsing trace:', e, item);\n  }\n}\nreturn items;"
+      },
+      "name": "Parse Traces",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        160
+      ],
+      "id": "parse-traces",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse JSON de cada generation\nconst inputItems = $input.all();\nconst items = [];\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  try {\n    // Redis retorna em propertyName\n    const rawData = item.json.propertyName || item.json.value || item.json;\n    const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;\n    \n    items.push({ \n      json: data,\n      pairedItem: { item: i }\n    });\n  } catch (e) {\n    console.log('Error parsing generation:', e, item);\n  }\n}\nreturn items;"
+      },
+      "name": "Parse Generations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        384
+      ],
+      "id": "parse-generations"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://langfuse:3000/api/public/traces",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic cGstbGYtZTM2OWFkYjAtOWU1OC00ZjRjLTgxNGYtYTA5MDY3MzQ1MzBkOnNrLWxmLTU0NjdkNDFkLTE0YzAtNDNjZi05MTdkLTcyYTA4ZWI2ODcyYg=="
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "batch",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Send Traces Langfuse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        160
+      ],
+      "id": "send-traces-langfuse"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://langfuse:3000/api/public/generations",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Basic cGstbGYtZTM2OWFkYjAtOWU1OC00ZjRjLTgxNGYtYTA5MDY3MzQ1MzBkOnNrLWxmLTU0NjdkNDFkLTE0YzAtNDNjZi05MTdkLTcyYTA4ZWI2ODcyYg=="
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "batch",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Send Generations Langfuse",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        816,
+        384
+      ],
+      "id": "send-generations-langfuse"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Agregar métricas para Prometheus\nconst now = new Date();\nconst timestamp = Math.floor(now.getTime() / 1000);\n\n// Contar traces e generations processados\nconst tracesCount = $('Parse Traces').all().length;\nconst generationsCount = $('Parse Generations').all().length;\n\n// Preparar métricas Prometheus\nconst metrics = `# TYPE chat_traces_processed_total counter\nchat_traces_processed_total ${tracesCount}\n# TYPE chat_generations_processed_total counter\nchat_generations_processed_total ${generationsCount}\n`;\n\nreturn [{ json: { metrics } }];"
+      },
+      "name": "Aggregate Prometheus",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        288
+      ],
+      "id": "aggregate-prometheus"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parsear eventos de negócio\nconst inputItems = $input.all();\nconst parsedItems = [];\n\nfor (let i = 0; i < inputItems.length; i++) {\n  const item = inputItems[i];\n  try {\n    // Redis retorna em propertyName\n    const rawData = item.json.propertyName || item.json.value || item.json;\n    const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;\n    \n    parsedItems.push({\n      json: parsed,\n      pairedItem: { item: i }\n    });\n  } catch (e) {\n    console.log('Error parsing business event:', e, item);\n  }\n}\n\nif (parsedItems.length === 0) {\n  // Sem eventos para processar\n  return [];\n}\n\nreturn parsedItems;"
+      },
+      "name": "Parse Business Events",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        576
+      ],
+      "id": "parse-business-events"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calcular métricas agregadas de negócio\nconst events = $input.all().map(i => i.json);\n\nif (events.length === 0) {\n  return [];\n}\n\nconst now = new Date();\nconst today = now.toISOString().split('T')[0];\nconst thisHour = today + '-' + String(now.getHours()).padStart(2, '0');\n\n// Contadores\nlet messagesTotal = 0;\nlet conversationsTotal = 0;\nlet ragHits = 0;\nlet ragMisses = 0;\nlet workflowErrors = 0;\nlet llmErrors = 0;\n\n// Latências\nconst latencies = [];\n\n// Conjuntos únicos\nconst uniqueUsers = new Set();\nconst uniqueUsersThisHour = new Set();\n\n// Processar eventos\nfor (const event of events) {\n  messagesTotal++;\n\n  // Usuários únicos\n  if (event.sessionId) {\n    uniqueUsers.add(event.sessionId);\n\n    if (event.hour === thisHour) {\n      uniqueUsersThisHour.add(event.sessionId);\n    }\n  }\n\n  // RAG\n  if (event.rag_hit) {\n    ragHits++;\n  } else {\n    ragMisses++;\n  }\n\n  // Latência\n  if (event.latency_seconds) {\n    latencies.push(event.latency_seconds);\n  }\n\n  // Erros\n  if (event.workflow_error) {\n    workflowErrors++;\n  }\n  if (event.llm_error) {\n    llmErrors++;\n  }\n}\n\n// Calcular estatísticas de latência\nlatencies.sort((a, b) => a - b);\nconst latencyAvg = latencies.reduce((a, b) => a + b, 0) / latencies.length || 0;\nconst latencyP50 = latencies[Math.floor(latencies.length * 0.5)] || 0;\nconst latencyP95 = latencies[Math.floor(latencies.length * 0.95)] || 0;\nconst latencyP99 = latencies[Math.floor(latencies.length * 0.99)] || 0;\n\n// Preparar métricas para Prometheus\nconst metrics = {\n  // Conversação\n  chat_messages_total: messagesTotal,\n  chat_users_today: uniqueUsers.size,\n  chat_messages_this_hour: uniqueUsersThisHour.size,\n\n  // Latência\n  chat_response_time_avg_seconds: latencyAvg,\n  chat_response_time_p50_seconds: latencyP50,\n  chat_response_time_p95_seconds: latencyP95,\n  chat_response_time_p99_seconds: latencyP99,\n\n  // RAG\n  rag_context_hits_total: ragHits,\n  rag_context_misses_total: ragMisses,\n\n  // Workflow\n  workflow_errors_total: workflowErrors,\n\n  // LLM\n  llm_vendor_errors_total: llmErrors,\n\n  // Metadata\n  timestamp: now.toISOString(),\n  events_processed: events.length\n};\n\nreturn { json: metrics };\n"
+      },
+      "name": "Calculate Business Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        576
+      ],
+      "id": "calculate-business-metrics-agg"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatar métricas no formato Prometheus\nconst metrics = $input.first().json;\n\nlet prometheusText = '';\n\n// Helper para adicionar métrica\nfunction addMetric(name, type, value, help = '', labels = {}) {\n  if (help) {\n    prometheusText += `# HELP ${name} ${help}\\n`;\n  }\n  prometheusText += `# TYPE ${name} ${type}\\n`;\n\n  const labelsStr = Object.keys(labels).length > 0\n    ? '{' + Object.entries(labels).map(([k, v]) => `${k}=\"${v}\"`).join(',') + '}'\n    : '';\n\n  prometheusText += `${name}${labelsStr} ${value}\\n`;\n}\n\n// Métricas de conversação\naddMetric('chat_messages_total', 'counter', metrics.chat_messages_total,\n  'Total de mensagens enviadas (usuário + bot)');\n\naddMetric('chat_users_today', 'gauge', metrics.chat_users_today,\n  'Total de usuários únicos no dia');\n\naddMetric('chat_messages_this_hour', 'gauge', metrics.chat_messages_this_hour,\n  'Total de mensagens enviadas na hora atual');\n\n// Métricas de latência\naddMetric('chat_response_time_avg_seconds', 'gauge', metrics.chat_response_time_avg_seconds.toFixed(3),\n  'Tempo médio entre a pergunta do usuário e a resposta do agente');\n\naddMetric('chat_response_time_p50_seconds', 'gauge', metrics.chat_response_time_p50_seconds.toFixed(3),\n  'Mediana do tempo de resposta');\n\naddMetric('chat_response_time_p95_seconds', 'gauge', metrics.chat_response_time_p95_seconds.toFixed(3),\n  'Percentil 95 do tempo de resposta');\n\naddMetric('chat_response_time_p99_seconds', 'gauge', metrics.chat_response_time_p99_seconds.toFixed(3),\n  'Percentil 99 do tempo de resposta');\n\n// Métricas RAG\naddMetric('rag_context_hits_total', 'counter', metrics.rag_context_hits_total,\n  'Total de requisições onde o RAG encontrou contexto relevante');\n\naddMetric('rag_context_misses_total', 'counter', metrics.rag_context_misses_total,\n  'Total de requisições onde não houve contexto (ou irrelevante)');\n\n// Métricas de workflow\naddMetric('workflow_errors_total', 'counter', metrics.workflow_errors_total,\n  'Total de erros ocorridos no workflow principal do n8n (chat)',\n  {workflow: 'chat-agent'});\n\n// Métricas de LLM\naddMetric('llm_vendor_errors_total', 'counter', metrics.llm_vendor_errors_total,\n  'Total de erros retornados pelo provedor LLM',\n  {provider: 'openai'});\n\n// Metadata\naddMetric('metrics_events_processed', 'gauge', metrics.events_processed,\n  'Número de eventos processados nesta execução');\n\nreturn {\n  json: {\n    prometheusText: prometheusText,\n    metrics: metrics\n  }\n};\n"
+      },
+      "name": "Format Prometheus Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        576
+      ],
+      "id": "format-prometheus-metrics"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://pushgateway:9091/metrics/job/chat_business_metrics",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "text/plain"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.prometheusText }}",
+        "options": {}
+      },
+      "name": "Send Business to Pushgateway",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1312,
+        576
+      ],
+      "id": "send-business-pushgateway"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1008,
+        288
+      ],
+      "id": "53081df3-04de-4a01-b83d-31cdd3dacd53",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://pushgateway:9091/metrics/job/chat_metrics_aggregator",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "text/plain"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/plain",
+        "body": "={{ $json.metrics }}",
+        "options": {}
+      },
+      "name": "Send Business to Pushgateway1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1392,
+        288
+      ],
+      "id": "9777f5fc-a83d-410f-abc5-5cbb4234da38"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1616,
+        416
+      ],
+      "id": "41d06a38-93fe-4d47-839e-e7dfb4951c42",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": true
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -320,
+        112
+      ],
+      "id": "328f29d0-4006-4e4f-a99c-324d6334b6b7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "pop",
+        "list": "metrics:queue:business",
+        "options": {}
+      },
+      "name": "Pop Business Queue",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        464,
+        576
+      ],
+      "id": "pop-business-queue",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "llen",
+        "list": "metrics:queue:traces"
+      },
+      "name": "Pop Traces Queue2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        176
+      ],
+      "id": "6bfd87c4-4770-4b2d-8aea-63a6ac66dd9a",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "72b7904c-25b0-47c2-ae55-86b407d7199e",
+              "leftValue": "={{ $json[\"metrics:queue:traces\"] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        176
+      ],
+      "id": "cd5a2350-8b9d-408f-9339-43411832704f",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        64,
+        480
+      ],
+      "id": "dfb8e6a9-1935-4dac-b324-fa5da2e83a8c",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pop Traces Queue": {
+      "main": [
+        [
+          {
+            "node": "Parse Traces",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pop Generations Queue": {
+      "main": [
+        [
+          {
+            "node": "Parse Generations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Traces": {
+      "main": [
+        [
+          {
+            "node": "Send Traces Langfuse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Generations": {
+      "main": [
+        [
+          {
+            "node": "Send Generations Langfuse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Traces Langfuse": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Generations Langfuse": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Aggregate Prometheus": {
+      "main": [
+        [
+          {
+            "node": "Send Business to Pushgateway1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Business Events": {
+      "main": [
+        [
+          {
+            "node": "Calculate Business Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Business Metrics": {
+      "main": [
+        [
+          {
+            "node": "Format Prometheus Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Prometheus Metrics": {
+      "main": [
+        [
+          {
+            "node": "Send Business to Pushgateway",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Prometheus",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Business to Pushgateway1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Business to Pushgateway": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pop Traces Queue2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pop Business Queue": {
+      "main": [
+        [
+          {
+            "node": "Parse Business Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pop Traces Queue2": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Pop Traces Queue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pop Generations Queue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Pop Business Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9df7a0e8-2a3e-4775-9e73-1e1eb28cc48e",
+  "meta": {
+    "instanceId": "91d4ed99e3628500fc46ed647151c00f1d933e76de085bd442d3514301a32458"
+  },
+  "id": "yaQYW0jw5nGLegaO",
+  "tags": []
+}

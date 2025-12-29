@@ -1,0 +1,1356 @@
+{
+  "name": "chat-workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-node",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        208
+      ],
+      "webhookId": "rag-query-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Responda a pergunta: {{ $json.mensagem_completa }}",
+        "options": {
+          "systemMessage": "Você é um assistente útil que responde perguntas baseado no contexto fornecido.",
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "ai-agent",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.5,
+      "position": [
+        1600,
+        160
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "sessionKey": "={{ $('Formata Variaveis').item.json.jId }}"
+      },
+      "id": "memory-redis",
+      "name": "Redis Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        448
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "=",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "response-node",
+      "name": "Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        336,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1424,
+        448
+      ],
+      "id": "3a183594-92cd-48ee-ac24-29aae66abeac",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xjZG06z4v7p6v7kk",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Base Vector de documents importados",
+        "milvusCollection": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "id"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreMilvus",
+      "typeVersion": 1.3,
+      "position": [
+        1728,
+        448
+      ],
+      "id": "183c9e9b-1c3f-4c23-8c53-f9778487ad9a",
+      "name": "Milvus Vector Store",
+      "credentials": {
+        "milvusApi": {
+          "id": "c41gONBqdckA3jUK",
+          "name": "Milvus account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        592
+      ],
+      "id": "611ffcf2-aaa6-4457-a2ab-03b6746817f8",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "xjZG06z4v7p6v7kk",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c0e6ac4b-00b5-4eec-8da1-ad8067f89c99",
+      "name": "No Operation, do nothing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "e70ebbec-d662-4d2d-a525-22c3da699f58",
+      "name": "OpenAI - Transcreve Audio1",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        256
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "xjZG06z4v7p6v7kk",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=<mensagem_do_usuario>\n{{ $json.output }}\n</mensagem_do_usuario>",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Apenas estruture a <mensagem_do_usuario> no formato JSON solicitado no output parser e seguindo as instruções de formatação abaixo. Não altere nada mais na mensagem\n\n# Formatação\n- Divida as mensagens para que fiquem naturais e humanizadas;\n- Divida as mensagens conforme estrutura do output parser para que não fiquem muito longas (maiores que 200 caractéres);\n- Não separe mensagens vazias;\n- Use quebras de linhas (\\n\\n) após pontos finais;\n- Para negrito (bold) use apenas um '' nunca duas '' (exemplo: *negrito).\n\nExemplo de formato JSON:\n{\n\"mensagens\": [\"Mensagem 0\", \"Mensagem 1\", \"Mensagem 2\"]\n}"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        2096,
+        160
+      ],
+      "id": "083e26c5-4ccd-45f7-8d17-2af596375030",
+      "name": "Estrutura da Mensagem de Retorno1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2080,
+        368
+      ],
+      "id": "a7cd31cb-65d1-4e42-8531-1ac801892f7e",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "xjZG06z4v7p6v7kk",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"mensagens\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      }\n    }\n  },\n  \"required\": [\"mensagens\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        2256,
+        368
+      ],
+      "id": "1893a172-34e0-4b5c-8bce-9286ab5bda02",
+      "name": "Seta o Tipo de Retorno JSON1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.mensagens",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2512,
+        160
+      ],
+      "id": "6ec1e99a-ba81-48f1-8931-aa28dd4dddd3",
+      "name": "Quebra Mensagens em várias Linhas1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2816,
+        160
+      ],
+      "id": "57b461b1-e0f7-4f5f-996a-8f088a1c6884",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Formata Variaveis').item.json.callbackUrl }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "remoteJid",
+              "value": "={{ $('Formata Variaveis').item.json.jId }}"
+            },
+            {
+              "name": "response",
+              "value": "={{ $json[\"output.mensagens\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3120,
+        176
+      ],
+      "id": "6491d69a-3322-429a-9a18-0319027ddf96",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "188d22a9-6a79-4f62-9ba2-41348b20950d",
+              "name": "jId",
+              "value": "={{ $json.body.remoteJid }}",
+              "type": "string"
+            },
+            {
+              "id": "036618ad-cd86-4e17-b036-34d93c018fcd",
+              "name": "messageId",
+              "value": "={{ $json.body.messageId }}",
+              "type": "string"
+            },
+            {
+              "id": "2b530a68-2cdc-4fc2-a348-ea214889ebd8",
+              "name": "instance",
+              "value": "={{ $json.body.instance }}",
+              "type": "string"
+            },
+            {
+              "id": "a8f28eea-589e-4182-9935-ec33675d9ab3",
+              "name": "name",
+              "value": "={{ $json.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "3340850e-d9c3-4692-bbab-922c6b72843c",
+              "name": "message",
+              "value": "={{ $json.body.conversation }}",
+              "type": "string"
+            },
+            {
+              "id": "04bfeea6-bd4f-4b0f-979e-3d199e86ec0e",
+              "name": "event",
+              "value": "={{ $json.body.event }}",
+              "type": "string"
+            },
+            {
+              "id": "15ad0bd9-fb25-40c3-b2a3-5331624bd5ec",
+              "name": "messageType",
+              "value": "={{ $json.body.messageType }}",
+              "type": "string"
+            },
+            {
+              "id": "f8509987-a860-4dae-8a03-a101d1c9387c",
+              "name": "audioMessage",
+              "value": "={{ $json.body.audioMessage }}",
+              "type": "string"
+            },
+            {
+              "id": "a456ec05-30bd-4783-b041-a67ac22d76a9",
+              "name": "callbackUrl",
+              "value": "={{ $json.body.callback }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1264,
+        208
+      ],
+      "id": "00b93e3c-959f-494d-8134-2724b74d2f25",
+      "name": "Formata Variaveis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const sessionId = $input.item.json.jId;\nconst message = $input.item.json.mensagem_completa;\nconst now = new Date();\n\nconst metricsData = {\n  mt: now.toISOString(), \n  md: now.toISOString().split('T')[0], \n  mh: now.toISOString().split('T')[0] + '-' + String(now.getHours()).padStart(2,'0'),    ms: now.getTime()\n}\n\nconst traceData = {\n  traceId: `trace_${sessionId}_${Date.now()}`,\n  sessionId: sessionId,\n  userId: sessionId,\n  name: \"chat_query\",\n  timestamp: now.toISOString(),\n  input: message,\n  metadata: {\n    workflow: \"chat\",\n  }\n};\n\nreturn [{\n  json: {\n    jId: sessionId,\n    _metrics: metricsData,  \n    _langfuse: traceData\n  }\n}];"
+      },
+      "name": "Start Trace",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        208
+      ],
+      "id": "langfuse-start-trace"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.jId }}_buffer",
+        "messageData": "={{ $('Formata Variaveis').item.json.message }}",
+        "tail": true
+      },
+      "id": "987ab39c-51a2-4305-9cc0-66854657132d",
+      "name": "Incluir Mensagem",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        112,
+        96
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('Formata Variaveis').item.json.jid }}_buffer",
+        "messageData": "={{ $json.text }}",
+        "tail": true
+      },
+      "id": "f723e6a9-7ecb-4a8b-85cc-623b3f28b858",
+      "name": "Incluir Audio",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        112,
+        256
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "62477c79-3663-429b-8cfd-cce5d5dbf003",
+              "leftValue": "={{ $json.event }}",
+              "rightValue": "messages.upsert",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -1040,
+        208
+      ],
+      "id": "4cb44c2b-21b0-4ed6-a9c1-5d26f2b01e8f",
+      "name": "Filtro por tipo de Evento"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "101c3ff7-e997-43bb-8e99-fe82746c5993",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "conversation",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conversation"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "38226af4-80fe-4155-9ceb-2379f44e29ed",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "extendedTextMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "extendedTextMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "300366d9-2416-4cf4-93c3-e48c8761c60f",
+                    "leftValue": "={{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "audioMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audioMessage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "66a2bcc3-7185-45d8-9ad0-1444298e1b39",
+                    "leftValue": "{{ $('Formata Variaveis').item.json.messageType }}",
+                    "rightValue": "imageMessage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imageMessage"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "a7cb56fb-b9e1-4f5c-a99c-1a34f9943650",
+      "name": "Case Tipo de Mensagens",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -544,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audioMessage",
+        "options": {
+          "mimeType": "=audio/mpeg"
+        }
+      },
+      "id": "bb6ea9c7-61f9-487d-9658-678da8bae71f",
+      "name": "Converter Áudio",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "base64",
+        "options": {
+          "fileName": "image",
+          "mimeType": ""
+        }
+      },
+      "id": "f9246375-4e4d-4996-8846-a6e9ae545a0c",
+      "name": "Converter Imagem",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "text": "Analise essa imagem, oque tem nela?",
+        "inputType": "base64",
+        "options": {}
+      },
+      "id": "e6cdf44f-2d8f-4bc6-a4fa-a109126eaa70",
+      "name": "OpenAI - Analisa Imagem",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        432
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "xjZG06z4v7p6v7kk",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $('Formata Variaveis').item.json.jid }}_buffer",
+        "messageData": "={{ $json.text }}",
+        "tail": true
+      },
+      "id": "12f2d200-8ecc-4402-b16d-0335f2d52cc4",
+      "name": "Incluir Imagem",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        112,
+        432
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        512,
+        176
+      ],
+      "id": "5ff0a4b5-c80a-4e82-95b8-b262a014d887",
+      "name": "Consolida Mensagem",
+      "webhookId": "dfa7c221-0b47-4dc2-9e7f-a1d4bb642014"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $('Formata Variaveis').item.json.jId }}_buffer",
+        "options": {}
+      },
+      "id": "163b58e6-16b3-4d82-a543-1343433f81ec",
+      "name": "Busca Memória da Conversa",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        704,
+        176
+      ],
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "db03f18b-f375-471f-8187-abc3a5a540e3",
+              "leftValue": "={{ $('Busca Memória da Conversa').item.json.propertyName }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        176
+      ],
+      "id": "580adb3c-ac70-476d-98db-7547da4ea644",
+      "name": "Valida se existe mensagem"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $('Formata Variaveis').item.json.jId }}_buffer"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        160
+      ],
+      "id": "550aeb55-cd6e-4ac2-936e-2d8800c605fb",
+      "name": "Limpa do Buffer",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Busca Memória da Conversa').first().json.propertyName\nlet array = Array.isArray(data) ? data : JSON.parse(data);\n\n// Junta os elementos do array com um espaço entre eles\nconst mensagem_completa = array.join(\" \");\n\n// Retorna o resultado com o nome da variável \"mensagem_completa\"\nreturn [{ json: { mensagem_completa: mensagem_completa, sessionId: $('Formata Variaveis').first().json.jid } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        160
+      ],
+      "id": "26b26243-b481-4c98-9468-bcd767a453ac",
+      "name": "Formata Mensagem"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capturar resposta da AI e preparar para enviar ao Langfuse\nconst aiResponse = $input.first().json.output || '';\nconst langfuseData = $('Start Trace').first().json._langfuse;\nconst endTime = new Date();\nconst startTime = new Date(langfuseData.timestamp);\nconst latencyMs = endTime.getTime() - startTime.getTime();\n\n// Preparar generation data\nreturn {\n  traceId: langfuseData.traceId,\n  sessionId: langfuseData.sessionId,\n  generationId: `gen_${Date.now()}`,\n  name: \"openai_chat\",\n  startTime: langfuseData.timestamp,\n  endTime: endTime.toISOString(),\n  model: \"gpt-4.1-mini\",\n  timestamp: langfuseData.timestamp,\n  input: langfuseData.input,\n  output: aiResponse,\n  metadata: {\n    workflow: langfuseData.metadata.workflow,\n    latencyMs: latencyMs,\n  }\n};"
+      },
+      "name": "Capture Metrica",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        0
+      ],
+      "id": "046d6548-b667-465d-8df9-e30dd5183c80"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capturar resposta da AI e preparar para enviar ao Langfuse\nconst aiResponse = $input.first().json.output || '';\nconst langfuseData = $('Start Trace').first().json._langfuse;\nconst endTime = new Date();\nconst startTime = new Date(langfuseData.timestamp);\nconst latencyMs = endTime.getTime() - startTime.getTime();\n\n// Preparar generation data\nreturn {\n  traceId: langfuseData.traceId,\n  sessionId: langfuseData.sessionId,\n  generationId: `gen_${Date.now()}`,\n  name: \"humaniza_mensagem\",\n  startTime: langfuseData.timestamp,\n  endTime: endTime.toISOString(),\n  model: \"gpt-4.1-mini\",\n  timestamp: langfuseData.timestamp,\n  input: $('AI Agent').first().json.output,\n  output: aiResponse,\n  metadata: {\n    workflow: langfuseData.metadata.workflow,\n    latencyMs: latencyMs,\n  }\n};"
+      },
+      "name": "Capture Metrica 2",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2416,
+        0
+      ],
+      "id": "6a0d002a-c379-45df-974a-9b9df6b8afa8"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "metrics:queue:traces",
+        "messageData": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Queue Trace Metric",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -128
+      ],
+      "id": "queue-trace-metric",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "metrics:queue:generations",
+        "messageData": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Queue Generation Metric",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        -192
+      ],
+      "id": "queue-generation-metric",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "metrics:queue:generations",
+        "messageData": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Queue Generation Metric 2",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2640,
+        -144
+      ],
+      "id": "queue-generation-metric-2",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capturar dados de todas as etapas anteriores\nconst startTrace = $('Start Trace').first().json;\nconst aiResponse = $('AI Agent').first().json;\nconst formatResponse = $input.first().json;\n\nconst now = new Date();\nconst jId = startTrace.jId;\nconst sessionId = startTrace._langfuse.sessionId;\n\n// Capturar latência total (do trace até agora)\nconst startTime = new Date(startTrace._langfuse.timestamp);\nconst latencyMs = now.getTime() - startTime.getTime();\nconst latencySeconds = latencyMs / 1000;\n\n// Verificar se AI Agent encontrou contexto RAG\n// O AI Agent tem intermediateSteps quando usa a ferramenta Milvus\nconst hasRagContext = aiResponse.intermediateSteps && aiResponse.intermediateSteps.length > 0;\nlet ragHit = false;\nlet ragDocumentsFound = 0;\nlet ragScore = 0;\n\nif (hasRagContext) {\n  // Verificar se encontrou documentos relevantes\n  const steps = aiResponse.intermediateSteps;\n  for (const step of steps) {\n    if (step.action && step.action.tool === 'Milvus Vector Store') {\n      ragHit = true;\n      // Tentar extrair número de documentos (se disponível)\n      if (step.observation) {\n        const obsText = step.observation.toString();\n        // Estimativa simples: se tem observação substancial, assume documentos encontrados\n        ragDocumentsFound = obsText.length > 100 ? 1 : 0;\n        ragScore = obsText.length > 100 ? 0.8 : 0.3;\n      }\n      break;\n    }\n  }\n}\n\n// Preparar evento de métrica de negócio\nconst businessMetric = {\n  timestamp: now.toISOString(),\n  date: now.toISOString().split('T')[0],\n  hour: now.toISOString().split('T')[0] + '-' + String(now.getHours()).padStart(2, '0'),\n  jId: jId,\n  sessionId: sessionId,\n\n  // Conversação\n  event_type: \"message\", // Sempre é mensagem, nova conversa é detectada no aggregator\n  message_type: \"user\", // Mensagem do usuário\n\n  // Latência\n  latency_ms: latencyMs,\n  latency_seconds: latencySeconds,\n\n  // RAG\n  rag_hit: ragHit,\n  rag_score: ragScore,\n  rag_documents_found: ragDocumentsFound,\n\n  // Workflow\n  workflow_name: \"chat-agent\",\n  workflow_execution_time_seconds: latencySeconds,\n  workflow_error: false,\n  error_node: null,\n  error_message: null,\n\n  // LLM\n  llm_provider: \"openai\",\n  llm_model: \"gpt-4.1-mini\",\n  llm_error: false\n};\n\nreturn businessMetric;\n"
+      },
+      "name": "Calculate Business Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        0
+      ],
+      "id": "calculate-business-metrics"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "metrics:queue:business",
+        "messageData": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Queue Business Metrics",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2928,
+        0
+      ],
+      "id": "queue-business-metrics",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1504,
+        784
+      ],
+      "id": "2145171d-97ad-41db-9634-03763115aa7b"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Capturar informações do erro\nconst error = $input.first().json.error || {};\nconst execution = $input.first().json.execution || {};\n\nconst now = new Date();\nconst errorNodeName = error.node?.name || 'unknown';\nconst errorMessage = error.message || 'Unknown error';\n\n// Determinar tipo de erro\nlet llmError = false;\nlet workflowError = true;\n\n// Se erro aconteceu em nodes OpenAI, é erro de LLM\nif (errorNodeName.includes('OpenAI') || errorNodeName.includes('AI Agent')) {\n  llmError = true;\n}\n\n// Preparar métrica de erro\nconst errorMetric = {\n  timestamp: now.toISOString(),\n  date: now.toISOString().split('T')[0],\n  hour: now.toISOString().split('T')[0] + '-' + String(now.getHours()).padStart(2, '0'),\n\n  event_type: \"error\",\n\n  // Informações do erro\n  workflow_name: \"chat-agent\",\n  workflow_error: workflowError,\n  error_node: errorNodeName,\n  error_message: errorMessage,\n\n  // Erro LLM\n  llm_provider: llmError ? \"openai\" : null,\n  llm_model: llmError ? \"gpt-4.1-mini\" : null,\n  llm_error: llmError,\n\n  // Execution info\n  execution_id: execution.id || null,\n\n  // Métricas zeradas (é apenas um evento de erro)\n  latency_ms: 0,\n  latency_seconds: 0,\n  rag_hit: false,\n  rag_score: 0,\n  rag_documents_found: 0\n};\n\nreturn errorMetric;\n"
+      },
+      "name": "Process Error Metric",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        784
+      ],
+      "id": "83f80f7e-9207-476e-8861-b4ad164bda28"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "metrics:queue:business",
+        "messageData": "={{ JSON.stringify($json) }}"
+      },
+      "name": "Queue Error Metric",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        784
+      ],
+      "id": "04f9af55-e17e-47c9-85de-798464e4b273",
+      "credentials": {
+        "redis": {
+          "id": "HpFmdWgegFyZTVtC",
+          "name": "Redis"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Formata Variaveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Capture Metrica",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Milvus Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Milvus Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Transcreve Audio1": {
+      "main": [
+        [
+          {
+            "node": "Incluir Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estrutura da Mensagem de Retorno1": {
+      "main": [
+        [
+          {
+            "node": "Quebra Mensagens em várias Linhas1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Capture Metrica 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seta o Tipo de Retorno JSON1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Estrutura da Mensagem de Retorno1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quebra Mensagens em várias Linhas1": {
+      "main": [
+        []
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Variaveis": {
+      "main": [
+        [
+          {
+            "node": "Filtro por tipo de Evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Trace": {
+      "main": [
+        [
+          {
+            "node": "Case Tipo de Mensagens",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Queue Trace Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response": {
+      "main": [
+        [
+          {
+            "node": "Consolida Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Audio": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro por tipo de Evento": {
+      "main": [
+        [
+          {
+            "node": "Start Trace",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Case Tipo de Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Incluir Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Converter Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Converter Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter Áudio": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Transcreve Audio1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Converter Imagem": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - Analisa Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI - Analisa Imagem": {
+      "main": [
+        [
+          {
+            "node": "Incluir Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Incluir Imagem": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolida Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Busca Memória da Conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Memória da Conversa": {
+      "main": [
+        [
+          {
+            "node": "Valida se existe mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida se existe mensagem": {
+      "main": [
+        [
+          {
+            "node": "Limpa do Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpa do Buffer": {
+      "main": [
+        [
+          {
+            "node": "Formata Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formata Mensagem": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Metrica": {
+      "main": [
+        [
+          {
+            "node": "Queue Generation Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Metrica 2": {
+      "main": [
+        [
+          {
+            "node": "Queue Generation Metric 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Calculate Business Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Business Metrics": {
+      "main": [
+        [
+          {
+            "node": "Queue Business Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Error Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Error Metric": {
+      "main": [
+        [
+          {
+            "node": "Queue Error Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "versionId": "465bec81-0a8f-4ff9-96db-d9ef9c807437",
+  "meta": {
+    "instanceId": "91d4ed99e3628500fc46ed647151c00f1d933e76de085bd442d3514301a32458",
+    "templateCredsSetupCompleted": true
+  },
+  "id": "IwTLhQJ7f6Lr86kz",
+  "tags": []
+}
